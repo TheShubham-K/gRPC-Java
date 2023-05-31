@@ -1,0 +1,28 @@
+syntax = "proto3";
+package calculator;
+
+option java_package = "com.proto.calculator";
+option java_multiple_files = true;
+
+message SumRequest {
+  int32 firstNumber = 1;
+  int32 secondNumber = 2;
+}
+
+message SumResponse {
+  int32 sumResult = 1;
+}
+
+message PrimeNumberDecompositionRequest {
+  int32 number = 1;
+};
+
+message PrimeNumberDecompositionResponse {
+  int32 primeFactor = 1;
+};
+
+service CalculatorService {
+  rpc Sum(SumRequest) returns (SumResponse) {};
+  rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest)
+      returns (stream PrimeNumberDecompositionResponse) {};
+}
