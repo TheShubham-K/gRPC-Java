@@ -4,6 +4,11 @@ import com.proto.dummy.DummyServiceGrpc;
 import com.proto.greet.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
+import org.checkerframework.checker.units.qual.Time;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class GreetingClient {
 
@@ -20,9 +25,14 @@ public class GreetingClient {
                 .usePlaintext()
                 .build();
 
-        // doUnaryCall(channel);
-        doServerStreamingCall(channel);
-        // doClientStreamingCall(channel);
+        /**
+         * All gRPC-APIs calls
+         */
+        /**
+         * doUnaryCall(channel);
+         * doServerStreamingCall(channel);
+         */
+        doClientStreamingCall(channel);
 
 
         // finally we shut down the channel
@@ -74,5 +84,70 @@ public class GreetingClient {
                     System.out.println(greetManyTimesResponse.getResult());
                 });
     }
-    private void doClientStreamingCall(ManagedChannel channel) {}
+    private void doClientStreamingCall(ManagedChannel channel) {
+
+        // create an asynchronous client (stub)
+        GreetServiceGrpc.GreetServiceStub asyncClient = GreetServiceGrpc.newStub(channel);
+        CountDownLatch latch = new CountDownLatch(1);
+        StreamObserver<LongGreetRequest> requestStreamObserver = asyncClient.longGreet(new StreamObserver<LongGreetResponse>() {
+            @Override
+            public void onNext(LongGreetResponse value) {
+                // we get a response from the server
+                System.out.println("Received a response from the server");
+                System.out.println(value.getResult());
+                // onNext will be called only once
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                // we get an error response from the server
+            }
+
+            @Override
+            public void onCompleted() {
+                // the server is done sending us data to the client
+                // onCompleted will be called right after onNext()
+                System.out.println("Server has completed sending us something");
+                latch.countDown();
+            }
+        });
+
+        // streaming message #1
+        System.out.println("Sending message #1");
+        requestStreamObserver.onNext(
+                LongGreetRequest.newBuilder()
+                        .setGreeting(Greeting.newBuilder()
+                                .setFirstName("Shubham")
+                                .build())
+                        .build()
+        );
+
+        // streaming message #2
+        System.out.println("Sending message #2");
+        requestStreamObserver.onNext(
+                LongGreetRequest.newBuilder()
+                        .setGreeting(Greeting.newBuilder()
+                                .setFirstName("John")
+                                .build())
+                        .build()
+        );
+
+        // streaming message #3
+        System.out.println("Sending message #3");
+        requestStreamObserver.onNext(
+                LongGreetRequest.newBuilder()
+                        .setGreeting(Greeting.newBuilder()
+                                .setFirstName("Marcel")
+                                .build())
+                        .build()
+        );
+
+        // we tell the server that the client is done sending data to the server
+        requestStreamObserver.onCompleted();
+        try {
+            latch.await(3L, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
