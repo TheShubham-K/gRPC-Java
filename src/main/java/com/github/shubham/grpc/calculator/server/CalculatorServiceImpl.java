@@ -19,10 +19,9 @@ public class CalculatorServiceImpl extends CalculatorServiceGrpc.CalculatorServi
 
     @Override
     public void primeNumberDecomposition(PrimeNumberDecompositionRequest request, StreamObserver<PrimeNumberDecompositionResponse> responseObserver) {
-        //super.primeNumberDecomposition(request, responseObserver);
 
-        Integer number = request.getNumber();
-        Integer divisor = 2;
+        long number = request.getNumber();
+        long divisor = 2L;
 
         while (number > 1) {
             if (number % divisor == 0) {

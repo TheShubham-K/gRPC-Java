@@ -19,7 +19,7 @@ public class CalculatorClient {
 
         // Unary API Server
         /*
-        SumRequest request = SumRequest.newBuilder()
+         SumRequest request = SumRequest.newBuilder()
                 .setFirstNumber(10)
                 .setSecondNumber(25)
                 .build();
@@ -30,7 +30,7 @@ public class CalculatorClient {
 
         */
 
-        int number = 567890;
+        long number = 5678999089032923090L;
         stub.primeNumberDecomposition(
                 PrimeNumberDecompositionRequest.newBuilder()
                 .setNumber(number)

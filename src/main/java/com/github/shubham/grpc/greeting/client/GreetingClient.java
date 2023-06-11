@@ -7,15 +7,27 @@ import io.grpc.ManagedChannelBuilder;
 
 public class GreetingClient {
 
+    public static void main(String[] args) {
+        System.out.println("Hello I'm a gRPC Client");
+        GreetingClient client = new GreetingClient();
+        client.run();
+
+    }
+
     public void run() {
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("localhost", 50051)
                 .usePlaintext()
                 .build();
 
-        doUnaryCall(channel);
+        // doUnaryCall(channel);
         doServerStreamingCall(channel);
-        doClientStreamingCall(channel);
+        // doClientStreamingCall(channel);
+
+
+        // finally we shut down the channel
+        System.out.println("Shutting Down Channel");
+        channel.shutdown();
     }
 
     private void doUnaryCall(ManagedChannel channel) {
@@ -48,15 +60,9 @@ public class GreetingClient {
         // print the greeting response
         System.out.println(greetResponse.getResult());
     }
-    private void doServerStreamingCall(ManagedChannel channel) {}
-    private void doClientStreamingCall(ManagedChannel channel) {}
-    public static void main(String[] args) {
-        System.out.println("Hello I'm a gRPC Client");
+    private void doServerStreamingCall(ManagedChannel channel) {
 
-        GreetingClient client = new GreetingClient();
-
-        // Streaming Server
-        // we prepare the request
+        GreetServiceGrpc.GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel);
         GreetManyTimesRequest greetingManyTimesRequest = GreetManyTimesRequest
                 .newBuilder()
                 .setGreeting(Greeting.newBuilder().setFirstName("Shubham"))
@@ -67,10 +73,6 @@ public class GreetingClient {
                 .forEachRemaining(greetManyTimesResponse -> {
                     System.out.println(greetManyTimesResponse.getResult());
                 });
-
-
-        // do Something
-        System.out.println("Shutting Down Channel");
-        channel.shutdown();
     }
+    private void doClientStreamingCall(ManagedChannel channel) {}
 }
