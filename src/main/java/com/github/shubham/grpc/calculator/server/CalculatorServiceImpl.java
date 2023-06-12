@@ -47,6 +47,7 @@ public class CalculatorServiceImpl extends CalculatorServiceGrpc.CalculatorServi
             // running sum and count
             int sum = 0;
             int count = 0;
+
             @Override
             public void onNext(ComputeAverageRequest value) {
                 // increment the sum
@@ -63,11 +64,43 @@ public class CalculatorServiceImpl extends CalculatorServiceGrpc.CalculatorServi
             @Override
             public void onCompleted() {
 
-                double average = (double) sum/count;
+                double average = (double) sum / count;
                 responseObserver.onNext(ComputeAverageResponse.newBuilder()
                         .setAverage(average)
                         .build()
                 );
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
+    @Override
+    public StreamObserver<FindMaximumRequest> findMaximum(StreamObserver<FindMaximumResponse> responseObserver) {
+        return new StreamObserver<FindMaximumRequest>() {
+
+            long currentMaximum = 0L;
+
+            @Override
+            public void onNext(FindMaximumRequest value) {
+                long currentNumber = value.getNumber();
+                if (currentNumber > currentMaximum) {
+                    currentMaximum = currentNumber;
+                    responseObserver.onNext(FindMaximumResponse.newBuilder().setMaximum(currentMaximum).build());
+                } else {
+                    // do nothing
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                responseObserver.onCompleted();
+            }
+
+            @Override
+            public void onCompleted() {
+                // send the current last maximum
+                responseObserver.onNext(FindMaximumResponse.newBuilder().setMaximum(currentMaximum).build());
+                // server is done sending data
                 responseObserver.onCompleted();
             }
         };

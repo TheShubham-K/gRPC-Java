@@ -4,7 +4,9 @@ import com.proto.calculator.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.w3c.dom.ls.LSOutput;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +28,8 @@ public class CalculatorClient {
          */
         // doUnaryCall(channel);
         // doServerStreamingCall(channel);
-        doClientStreamingCall(channel);
+        // doClientStreamingCall(channel);
+        doBiDiStreamingCall(channel);
 
         System.out.println("Shutting down the channel");
         channel.shutdown();
@@ -74,7 +77,7 @@ public class CalculatorClient {
             public void onNext(ComputeAverageResponse value) {
 
                 System.out.println("Received a response from the server");
-                System.out.println("Average from the server: "+value.getAverage());
+                System.out.println("Average from the server: " + value.getAverage());
             }
 
             @Override
@@ -90,7 +93,7 @@ public class CalculatorClient {
         });
 
         // we send 10000000 messages to our server (client streaming)
-        for(int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 100000; i++) {
             requestStreamObserver.onNext(ComputeAverageRequest.newBuilder()
                     .setNumber(i)
                     .build());
@@ -104,4 +107,44 @@ public class CalculatorClient {
             e.printStackTrace(System.out);
         }
     }
+
+
+    private void doBiDiStreamingCall(ManagedChannel channel) {
+
+        CalculatorServiceGrpc.CalculatorServiceStub asyncStub = CalculatorServiceGrpc.newStub(channel);
+        CountDownLatch latch = new CountDownLatch(1);
+        StreamObserver<FindMaximumRequest> requestStreamObserver = asyncStub.findMaximum(new StreamObserver<>() {
+            @Override
+            public void onNext(FindMaximumResponse value) {
+                System.out.println("Go new maximum from server: " + value.getMaximum());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+            }
+
+            @Override
+            public void onCompleted() {
+                System.out.println("Server has completed sending us data");
+                latch.countDown();
+            }
+        });
+
+        Arrays.asList(3, 5, 17, 9, 8, 30, 12).forEach(number -> {
+            System.out.println("Sending number: " + number);
+            requestStreamObserver.onNext(FindMaximumRequest.newBuilder()
+                    .setNumber(number)
+                    .build()
+            );
+        });
+
+        // we expect the average to be sum_of(100000) / 100000 = 7049.82704
+        requestStreamObserver.onCompleted();
+        try {
+            latch.await(3, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace(System.out);
+        }
+    }
+
 }
