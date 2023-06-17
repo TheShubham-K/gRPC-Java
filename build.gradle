@@ -22,9 +22,10 @@ repositories {
 
 dependencies {
     // gRPC
-    runtimeOnly 'io.grpc:grpc-netty-shaded:1.54.1'
     implementation 'io.grpc:grpc-protobuf:1.54.1'
     implementation 'io.grpc:grpc-stub:1.54.1'
+    implementation 'io.grpc:grpc-netty-shaded:1.54.1' // shaded: includes ssl libraries
+    implementation "io.grpc:grpc-services:1.54.1" // reflection
     compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
 
 

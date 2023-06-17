@@ -6,6 +6,8 @@ import io.grpc.*;
 import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.units.qual.Time;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
@@ -21,26 +23,47 @@ public class GreetingClient {
     }
 
     public void run() {
+        /**
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("localhost", 50051)
                 .usePlaintext()
                 .build();
+         */
+
+        // With server authentication SSL/TLS; custom CA root certificates
+        ChannelCredentials creds = null;
+        try {
+            creds = TlsChannelCredentials.newBuilder()
+                    .trustManager(new File("ssl/ca.crt"))
+                    .build();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ManagedChannel secureChannel = Grpc.newChannelBuilder("localhost:50051", creds)
+                .build();
 
         /**
-         * All gRPC-APIs calls
+         * All gRPC-APIs calls with plan text (Non-SSL)
          */
-        /**
-         * doUnaryCall(channel);
-         * doServerStreamingCall(channel);
-         */
+
+        // doUnaryCall(channel);
+        // doServerStreamingCall(channel);
         // doClientStreamingCall(channel);
         // doBiDiStreamingCall(channel);
+        // doUnaryCallWithDeadline(channel);
 
-        doUnaryCallWithDeadline(channel);
+        /**
+         * All gRPC-APIs calls with Secured Channel (SSL)
+         */
+         doUnaryCall(secureChannel);
+        // doServerStreamingCall(secureChannel);
+        // doClientStreamingCall(secureChannel);
+        // doBiDiStreamingCall(secureChannel);
+        // doUnaryCallWithDeadline(secureChannel);
 
         // finally we shut down the channel
         System.out.println("Shutting Down Channel");
-        channel.shutdown();
+        secureChannel.shutdown();
     }
 
     private void doUnaryCall(ManagedChannel channel) {

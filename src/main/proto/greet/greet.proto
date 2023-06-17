@@ -68,4 +68,11 @@ service GreetService {
     this rpc will complete in no less than 300ms
    */
   rpc GreetWithDeadlines(GreetWithDeadlinesRequest) returns (GreetWithDeadlinesResponse) {};
+
+  /**
+  We'll setup a certificate authority, server certificate, sign a server certificate, setup server to use TLS,
+   the client to connect securely over TLS
+   https://www.github.com/grpc/grpc-java
+   https://www.grpc.io/docs/guides/auth.html
+   */
 }

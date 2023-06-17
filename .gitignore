@@ -3,6 +3,10 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+/ssl/*.crt
+/ssl/*.key
+/ssl/*.csr
+/ssl/*.pem
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
