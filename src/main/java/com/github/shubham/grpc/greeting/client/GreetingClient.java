@@ -2,8 +2,7 @@ package com.github.shubham.grpc.greeting.client;
 
 import com.proto.dummy.DummyServiceGrpc;
 import com.proto.greet.*;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.*;
 import io.grpc.stub.StreamObserver;
 import org.checkerframework.checker.units.qual.Time;
 
@@ -35,7 +34,9 @@ public class GreetingClient {
          * doServerStreamingCall(channel);
          */
         // doClientStreamingCall(channel);
-        doBiDiStreamingCall(channel);
+        // doBiDiStreamingCall(channel);
+
+        doUnaryCallWithDeadline(channel);
 
         // finally we shut down the channel
         System.out.println("Shutting Down Channel");
@@ -72,6 +73,7 @@ public class GreetingClient {
         // print the greeting response
         System.out.println(greetResponse.getResult());
     }
+
     private void doServerStreamingCall(ManagedChannel channel) {
 
         GreetServiceGrpc.GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel);
@@ -86,6 +88,7 @@ public class GreetingClient {
                     System.out.println(greetManyTimesResponse.getResult());
                 });
     }
+
     private void doClientStreamingCall(ManagedChannel channel) {
 
         // create an asynchronous client (stub)
@@ -197,6 +200,44 @@ public class GreetingClient {
             latch.await(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace(System.out);
+        }
+    }
+
+    private void doUnaryCallWithDeadline(ManagedChannel channel) {
+        GreetServiceGrpc.GreetServiceBlockingStub blockingStub = GreetServiceGrpc.newBlockingStub(channel);
+
+        // first call (3000ms deadline)
+        try {
+            System.out.println("Sending a request with a deadline of 3000 ms");
+            GreetWithDeadlinesResponse response = blockingStub.withDeadlineAfter(3000, TimeUnit.MILLISECONDS)
+                    .greetWithDeadlines(GreetWithDeadlinesRequest.newBuilder().setGreeting(
+                                    Greeting.newBuilder().setFirstName("Shubham")
+                            ).build()
+                    );
+            System.out.println(response.getResult());
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus() == Status.DEADLINE_EXCEEDED) {
+                System.out.println("Deadline has exceeded, we don't want the response");
+            } else {
+                e.printStackTrace();
+            }
+        }
+
+        // second call (100ms deadline)
+        try {
+            System.out.println("Sending a request with a deadline of 100 ms");
+            GreetWithDeadlinesResponse response = blockingStub.withDeadline(Deadline.after(100, TimeUnit.MICROSECONDS))
+                    .greetWithDeadlines(GreetWithDeadlinesRequest.newBuilder().setGreeting(
+                                    Greeting.newBuilder().setFirstName("Shubham")
+                            ).build()
+                    );
+            System.out.println(response.getResult());
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus() == Status.DEADLINE_EXCEEDED) {
+                System.out.println("Deadline has exceeded, we don't want the response");
+            } else {
+                e.printStackTrace();
+            }
         }
     }
 }

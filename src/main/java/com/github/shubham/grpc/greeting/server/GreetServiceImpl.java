@@ -1,6 +1,7 @@
 package com.github.shubham.grpc.greeting.server;
 
 import com.proto.greet.*;
+import io.grpc.Context;
 import io.grpc.stub.StreamObserver;
 
 public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
@@ -90,7 +91,7 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
         return new StreamObserver<GreetEveryoneRequest>() {
             @Override
             public void onNext(GreetEveryoneRequest value) {
-                String result = "Hello "+ value.getGreeting().getFirstName();
+                String result = "Hello " + value.getGreeting().getFirstName();
                 GreetEveryoneResponse greetEveryoneResponse = GreetEveryoneResponse.newBuilder()
                         .setResult(result)
                         .build();
@@ -99,7 +100,7 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                System.out.println("Error from BiDi: "+ t.getMessage());
+                System.out.println("Error from BiDi: " + t.getMessage());
             }
 
             @Override
@@ -107,5 +108,30 @@ public class GreetServiceImpl extends GreetServiceGrpc.GreetServiceImplBase {
                 responseObserver.onCompleted();
             }
         };
+    }
+
+    @Override
+    public void greetWithDeadlines(GreetWithDeadlinesRequest request, StreamObserver<GreetWithDeadlinesResponse> responseObserver) {
+
+        Context current = Context.current();
+
+        try {
+            for (int i = 0; i < 3; i++) {
+                if (!current.isCancelled()) {
+                    System.out.println("Sleeping for next 100 ms");
+                    Thread.sleep(100);
+                } else {
+                    return;
+                }
+            }
+            responseObserver.onNext(
+                    GreetWithDeadlinesResponse.newBuilder()
+                            .setResult("Hello " + request.getGreeting().getFirstName())
+                            .build()
+            );
+            responseObserver.onCompleted();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
