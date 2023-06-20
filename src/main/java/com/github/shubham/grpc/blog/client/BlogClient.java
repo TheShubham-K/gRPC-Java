@@ -1,9 +1,6 @@
 package com.github.shubham.grpc.blog.client;
 
-import com.proto.blog.Blog;
-import com.proto.blog.BlogServiceGrpc;
-import com.proto.blog.CreateBlogRequest;
-import com.proto.blog.CreateBlogResponse;
+import com.proto.blog.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -38,6 +35,51 @@ public class BlogClient {
 
         System.out.println("Received create blog response: " + response);
         System.out.println(response.toString());
+
+        String blogId = response.getBlog().getId();
+        ReadBlogResponse readBlogResponse = blogClient.readBlog(
+                ReadBlogRequest
+                        .newBuilder()
+                        .setBlogId(blogId)
+                        .build()
+        );
+        System.out.println("Read blog response: \n" + readBlogResponse);
+
+        /**
+         * to trigger a NOT_FOUND error
+         * try{
+         *             ReadBlogResponse readBlogResponseNotFound = blogClient.readBlog(
+         *                     ReadBlogRequest
+         *                             .newBuilder()
+         *                             .setBlogId("6491e2fda6w4733f734083e9")
+         *                             .build()
+         *             );
+         *             System.out.println("Read blog with fake-id: " + readBlogResponseNotFound);
+         *         } catch (RuntimeException e) {
+         *             e.printStackTrace();
+         *             System.out.println("Exception recorded: "+ e.getMessage());
+         *         }
+         */
+
+
+        Blog newBlog = Blog.newBuilder()
+                .setId(blogId)
+                .setAuthorId("Changed Author")
+                .setTitle("New Blog! (ReUpdated)")
+                .setContent("Hello world this is my first blog with Update request! I've added some more content")
+                .build();
+
+        System.out.println("Updating blog...");
+        UpdateBlogResponse updateBlogResponse = blogClient.updateBlog(
+                UpdateBlogRequest
+                        .newBuilder()
+                        .setBlog(newBlog)
+                        .build()
+        );
+        System.out.println("Updated blog response: "+ updateBlogResponse.toString());
+
+        System.out.println("Shutting down the channel");
+        channel.shutdown();
     }
 
 }

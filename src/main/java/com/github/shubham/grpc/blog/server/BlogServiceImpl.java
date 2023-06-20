@@ -5,14 +5,19 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.proto.blog.*;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.bson.Document;
+import org.bson.types.ObjectId;
+
+import static com.mongodb.client.model.Filters.eq;
 
 public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
 
     private MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
     private MongoDatabase database = mongoClient.getDatabase("mydb");
     private MongoCollection<Document> collection = database.getCollection("blog");
+
     @Override
     public void createBlog(CreateBlogRequest request, StreamObserver<CreateBlogResponse> responseObserver) {
 
@@ -42,8 +47,112 @@ public class BlogServiceImpl extends BlogServiceGrpc.BlogServiceImplBase {
     @Override
     public void readBlog(ReadBlogRequest request, StreamObserver<ReadBlogResponse> responseObserver) {
 
+        System.out.println("Received read blog request: " + request);
         String blogId = request.getBlogId();
-        collection.find(equals())
+        System.out.println("Searching for a blog with id: " + blogId);
 
+        Document result = null;
+
+        try {
+            result = collection.find(eq("_id", new ObjectId(blogId)))
+                    .first();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Exception caught in server while searching for blogId " + blogId);
+            System.out.println("Message from the error: " + e.getMessage());
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription("The blog with the corresponding id does not exist")
+                            .augmentDescription(e.getLocalizedMessage())
+                            .asRuntimeException()
+            );
+        }
+
+        if (result == null) {
+            // we don't have a matching blog
+            System.out.println("Blog not found");
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription("The blog with the corresponding id does not exist")
+                            .asRuntimeException()
+            );
+        } else {
+            System.out.println("Blog found sending response");
+            Blog blog = documentToBlog(result);
+            responseObserver.onNext(
+                    ReadBlogResponse
+                            .newBuilder()
+                            .setBlog(blog)
+                            .build()
+            );
+            responseObserver.onCompleted();
+        }
+    }
+
+    @Override
+    public void updateBlog(UpdateBlogRequest request, StreamObserver<UpdateBlogResponse> responseObserver) {
+
+        System.out.println("Received Update blog request: " + request);
+        Blog blog = request.getBlog();
+        String blogId = blog.getId();
+        System.out.println("Searching for a blog so that we can update it");
+
+        Document result = null;
+
+        try {
+            result = collection.find(eq("_id", new ObjectId(blogId)))
+                    .first();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Exception caught in server while searching for blogId " + blogId);
+            System.out.println("Message from the error: " + e.getMessage());
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription("The blog with the corresponding id does not exist")
+                            .augmentDescription(e.getLocalizedMessage())
+                            .asRuntimeException()
+            );
+        }
+
+        if (result == null) {
+            // we don't have a matching blog
+            System.out.println("Blog not found");
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription("The blog with the corresponding id does not exist")
+                            .asRuntimeException()
+            );
+        } else {
+            System.out.println("Blog found Updating the blog");
+            Document docReplacement = new Document("author_id", blog.getAuthorId())
+                    .append("title", blog.getTitle())
+                    .append("content", blog.getContent())
+                    .append("_id", new ObjectId(blogId));
+
+            System.out.println("Replacing the blog in database...");
+            collection.replaceOne(eq(
+                            "_id",
+                            result.getObjectId("_id")
+                    ),
+                    docReplacement);
+
+            System.out.println("Replaced! Sending as a response");
+            responseObserver.onNext(
+                    UpdateBlogResponse
+                            .newBuilder()
+                            .setBlog(documentToBlog(docReplacement))
+                            .build()
+            );
+            responseObserver.onCompleted();
+        }
+    }
+
+    private Blog documentToBlog(Document result) {
+        return Blog.newBuilder()
+                .setAuthorId(result.getString("author_id"))
+                .setTitle(result.getString("title"))
+                .setContent(result.getString("content"))
+                .setId(result.getObjectId("_id").toString())
+                .build();
     }
 }
