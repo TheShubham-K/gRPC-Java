@@ -2,6 +2,7 @@ package com.github.shubham.grpc.blog.server;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.protobuf.services.ProtoReflectionService;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -14,7 +15,8 @@ public class BlogServer {
             Logger logger = LoggerFactory.getLogger(BlogServer.class);
 
             Server server = ServerBuilder.forPort(50051)
-                    .addService(new BlogServiceImpl()) // for reflection
+                    .addService(new BlogServiceImpl())
+                    .addService(ProtoReflectionService.newInstance())// for reflection
                     .build();
             server.start();
 

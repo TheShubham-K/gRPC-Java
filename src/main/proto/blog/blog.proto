@@ -35,13 +35,33 @@ message UpdateBlogResponse {
   Blog blog = 1;
 }
 
+message DeleteBlogRequest {
+  string blog_id = 1;
+}
+
+message DeleteBlogResponse {
+  string blog_id = 1;
+}
+
+message ListBlogRequest {
+
+}
+
+message ListBlogResponse {
+    Blog blog = 1;
+}
+
 service BlogService {
 
-  // Create blog RPC service call
+  // Create blog RPC api call
   rpc CreateBlog(CreateBlogRequest) returns (CreateBlogResponse) {};
-  // Read blog RPC service call
+  // Read blog RPC api call
   rpc ReadBlog(ReadBlogRequest) returns (ReadBlogResponse) {}; // returns NOT_FOUND if not found
-  // Update blog RPC service call
-  rpc UpdateBlog(UpdateBlogRequest) returns (UpdateBlogResponse) {};
+  // Update blog RPC api call
+  rpc UpdateBlog(UpdateBlogRequest) returns (UpdateBlogResponse) {}; // returns NOT_FOUND if not found
+  // Delete blog RPC api call
+  rpc DeleteBlog(DeleteBlogRequest) returns (DeleteBlogResponse) {}; // returns NOT_FOUND if not found
+  // List blog RPC api call
+  rpc ListBlog(ListBlogRequest) returns (stream ListBlogResponse) {};
 
 }
